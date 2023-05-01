@@ -26,31 +26,28 @@ public class ApiApp extends Application {
     } // ApiApp
 
     /** {@inheritDoc} */
-    @Override
-    public void start(Stage stage) {
-
-        this.stage = stage;
-
-        // demonstrate how to load local asset using "file:resources/"
+    public void init() {
         Image bannerImage = new Image("file:resources/readme-banner.png");
         ImageView banner = new ImageView(bannerImage);
         banner.setPreserveRatio(true);
         banner.setFitWidth(640);
-
         // some labels to display information
         Label notice = new Label("Modify the starter code to suit your needs.");
-
         // setup scene
         root.getChildren().addAll(banner, notice);
-        scene = new Scene(root);
+    } // init
 
+    /** {@inheritDoc} */
+    @Override
+    public void start(Stage stage) {
+        this.stage = stage;
+        // demonstrate how to load local asset using "file:resources/"
+        scene = new Scene(root);
         // setup stage
         stage.setTitle("ApiApp!");
         stage.setScene(scene);
         stage.setOnCloseRequest(event -> Platform.exit());
         stage.sizeToScene();
         stage.show();
-
     } // start
-
 } // ApiApp
