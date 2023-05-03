@@ -75,17 +75,17 @@ public class ApiApp extends Application {
     CustomComponent cc14;
 
     /** This is the variable storing the downloads from the OpenCage API. */
-    private OpenCageResponse openCageResponse;
+    OpenCageResponse openCageResponse;
 
     /** This is the city, state that the user will enter. */
-    private String place;
+    String place;
 
     /** This will be the latitude and longitude of the city the user inputs. */
-    private double latitude;
-    private double longitude;
+    double latitude;
+    double longitude;
 
     /** This is the variable storing the downloads from the NWS API. */
-    private NWSResponse nwsResponse;
+    NWSResponse nwsResponse;
 
     /** This is the link to the weekly weather forecast for some area found with vars above. */
     String forecastLink;
@@ -105,20 +105,20 @@ public class ApiApp extends Application {
         instructions = new Label("Type a city, state to get the weather for that area.");
         blank = new Label();
         openCageResponse = new OpenCageResponse();
-        cc1 = new CustomComponent();
-        cc2 = new CustomComponent();
-        cc3 = new CustomComponent();
-        cc4 = new CustomComponent();
-        cc5 = new CustomComponent();
-        cc6 = new CustomComponent();
-        cc7 = new CustomComponent();
-        cc8 = new CustomComponent();
-        cc9 = new CustomComponent();
-        cc10 = new CustomComponent();
-        cc11 = new CustomComponent();
-        cc12 = new CustomComponent();
-        cc13 = new CustomComponent();
-        cc14 = new CustomComponent();
+        cc1 = new CustomComponent(1);
+        cc2 = new CustomComponent(2);
+        cc3 = new CustomComponent(3);
+        cc4 = new CustomComponent(4);
+        cc5 = new CustomComponent(5);
+        cc6 = new CustomComponent(6);
+        cc7 = new CustomComponent(7);
+        cc8 = new CustomComponent(8);
+        cc9 = new CustomComponent(9);
+        cc10 = new CustomComponent(10);
+        cc11 = new CustomComponent(11);
+        cc12 = new CustomComponent(12);
+        cc13 = new CustomComponent(13);
+        cc14 = new CustomComponent(14);
     } // ApiApp
 
     /** {@inheritDoc} */
@@ -164,7 +164,6 @@ public class ApiApp extends Application {
             double swLongitude = openCageResponse.results[index].bounds.southwest.lng;
             latitude = (neLatitude + swLatitude) / 2;
             longitude = (neLongitude + swLongitude) / 2;
-            System.out.println("getLatLong method is done.");
         } catch (IOException | InterruptedException e) {
             System.err.println(e);
             e.printStackTrace();
@@ -196,7 +195,6 @@ public class ApiApp extends Application {
             nwsResponse = GSON
                 .fromJson(jsonString, NWSResponse.class);
             forecastLink = nwsResponse.properties.forecast;
-            System.out.println("getForecastLink method is done.");
         } catch (IOException | InterruptedException e) {
             System.err.println(e);
             e.printStackTrace();
@@ -206,7 +204,6 @@ public class ApiApp extends Application {
     /** This is the final response that will get the weather with the updated forecastLink. */
     private void getWeather() {
         getForecastLink();
-        System.out.println("getWeather method has begun.");
         try {
             String uri = forecastLink;
             // building the request
@@ -225,7 +222,7 @@ public class ApiApp extends Application {
             // parse the JSON-formatted string using GSON
             forecastResponse = GSON
                 .fromJson(jsonString, ForecastResponse.class);
-            printForecastResponse(forecastResponse);
+            cc1.setComponents(forecastResponse);
         } catch (IOException | InterruptedException e) {
             System.err.println(e);
             e.printStackTrace();
