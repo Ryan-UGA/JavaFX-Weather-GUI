@@ -40,6 +40,8 @@ public class ApiApp extends Application {
         .create();                                    // builds and returns a Gson object
     /** This is the base of the OpenCage API. */
     private static final String OPENCAGE_API = "https://api.opencagedata.com/geocode/v1/json?q=";
+    /** This is the base of the National Weather Service API. */
+    private static final String NWS_API = "https://api.weather.gov/points/";
     /** Variables used below. */
     Stage stage;
     Scene scene;
@@ -48,13 +50,15 @@ public class ApiApp extends Application {
     HBox hbox;
     TextField search;
     Button button;
-    /** This is the variable storing the downloads from the OpenCage API.*/
+    /** This is the variable storing the downloads from the OpenCage API. */
     private OpenCageResponse openCageResponse;
     /** This is the city, state that the user will enter. */
     private String place;
     /** This will be the latitude and longitude of the city the user inputs. */
     private double latitude;
     private double longitude;
+    /** This is the variable storing the downloads from the NWS API. */
+    private NWSResponse nwsResponse;
 
     /**
      * Constructs an {@code ApiApp} object. This default (i.e., no argument)
@@ -64,7 +68,7 @@ public class ApiApp extends Application {
         root = new VBox();
         hbox = new HBox(8);
         search = new TextField("Type the city here.");
-        button = new Button("Get Coordinates");
+        button = new Button("Get Weather");
         openCageResponse = new OpenCageResponse();
     } // ApiApp
 
@@ -72,11 +76,11 @@ public class ApiApp extends Application {
     public void init() {
         hbox.getChildren().addAll(search, button);
         root.getChildren().add(hbox);
-        EventHandler<ActionEvent> geoCoding = ae -> getLatLong();
-        button.setOnAction(geoCoding);
+        EventHandler<ActionEvent> weather = ae -> getForecastLink();
+        button.setOnAction(weather);
     } // init
 
-    /** This method tests downloading the OpenCageAPI. */
+    /** This method gets the latitude and longitude of an inputted city using OpenCage API. */
     private void getLatLong() {
         try {
             place = URLEncoder.encode(search.getText(), StandardCharsets.UTF_8);
@@ -112,7 +116,39 @@ public class ApiApp extends Application {
             System.err.println(e);
             e.printStackTrace();
         } // try
-    } // download
+    } // getLatLong
+
+    /**
+     * This method will get the weather at specified latitude and longitude using
+     * the National Weather Service API.
+     */
+    private void getForecastLink() {
+        getLatLong();
+        try {
+            String uri = NWS_API + latitude + "," + longitude;
+            System.out.println("uri = " + uri);
+            // building the request
+            HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(uri))
+                .build();
+            // send the request and receive response in the form of a String
+            HttpResponse<String> response = HTTP_CLIENT
+                .send(request, BodyHandlers.ofString());
+            // ensure request is okay
+            if (response.statusCode() != 200) {
+                throw new IOException(response.toString());
+            } // if
+            // get request body (the content we requested minus excess
+            String jsonString = response.body();
+            // parse the JSON-formatted string using GSON
+            nwsResponse = GSON
+                .fromJson(jsonString, NWSResponse.class);
+            printNWSResponse(nwsResponse);
+        } catch (IOException | InterruptedException e) {
+            System.err.println(e);
+            e.printStackTrace();
+        } //
+    } // getForecastLink
 
     /**
      * Print a response from the OpenCage API.
@@ -128,6 +164,20 @@ public class ApiApp extends Application {
         System.out.println("latitude = " + latitude);
         System.out.println("longitude = " + longitude);
     } // printOpenCageResponse
+
+    /**
+     * Print a response from the NWS API.
+     *
+     * @param nwsResponse the response object
+     */
+    private void printNWSResponse(NWSResponse nwsResponse) {
+        System.out.println();
+        System.out.println("********* PRETTY JSON STRING FOR NWSResponse : *********");
+        System.out.println(GSON.toJson(nwsResponse));
+        System.out.println();
+        System.out.println("********** PARSED RESULTS: **********\n");
+        System.out.println("forecast link = " + nwsResponse.properties.forecast);
+    } // printNWSResponse
 
     /** {@inheritDoc} */
     @Override
