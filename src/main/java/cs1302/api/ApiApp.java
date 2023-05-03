@@ -6,18 +6,24 @@ import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.VBox;
+import javafx.scene.layout.HBox;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 import javafx.scene.control.Button;
+import javafx.scene.control.TextField;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.twilio.Twilio;
-import com.twilio.rest.api.v2010.account.Message;
-import com.twilio.type.PhoneNumber;
+import java.nio.charset.StandardCharsets;
+import java.net.URI;
+import java.net.URL;
+import java.net.URLEncoder;
+import java.io.IOException;
+import javafx.event.EventHandler;
+import javafx.event.ActionEvent;
 
 /**
  * REPLACE WITH NON-SHOUTING DESCRIPTION OF YOUR APP.
@@ -32,11 +38,23 @@ public class ApiApp extends Application {
     public static Gson GSON = new GsonBuilder()
         .setPrettyPrinting()                          // enable nice output when printing
         .create();                                    // builds and returns a Gson object
+    /** This is the base of the OpenCage API. */
+    private static final String OPENCAGE_API = "https://api.opencagedata.com/geocode/v1/json?q=";
     /** Variables used below. */
     Stage stage;
     Scene scene;
     VBox root;
+    /** Root consists of this hbox of items on the top. */
+    HBox hbox;
+    TextField search;
     Button button;
+    /** This is the variable storing the downloads from the OpenCage API.*/
+    private OpenCageResponse openCageResponse;
+    /** This is the city, state that the user will enter. */
+    private String place;
+    /** This will be the latitude and longitude of the city the user inputs. */
+    private double latitude;
+    private double longitude;
 
     /**
      * Constructs an {@code ApiApp} object. This default (i.e., no argument)
@@ -44,21 +62,72 @@ public class ApiApp extends Application {
      */
     public ApiApp() {
         root = new VBox();
-        button = new Button("Click this");
+        hbox = new HBox(8);
+        search = new TextField("Type the city here.");
+        button = new Button("Get Coordinates");
+        openCageResponse = new OpenCageResponse();
     } // ApiApp
 
     /** {@inheritDoc} */
     public void init() {
-        /**Image bannerImage = new Image("file:resources/readme-banner.png");
-        ImageView banner = new ImageView(bannerImage);
-        banner.setPreserveRatio(true);
-        banner.setFitWidth(640);
-        // some labels to display information
-        Label notice = new Label("Modify the starter code to suit your needs.");
-        // setup scene
-        root.getChildren().addAll(banner, notice); */
-        root.getChildren().addAll(button);
+        hbox.getChildren().addAll(search, button);
+        root.getChildren().add(hbox);
+        EventHandler<ActionEvent> geoCoding = ae -> getLatLong();
+        button.setOnAction(geoCoding);
     } // init
+
+    /** This method tests downloading the OpenCageAPI. */
+    private void getLatLong() {
+        try {
+            place = URLEncoder.encode(search.getText(), StandardCharsets.UTF_8);
+            String temp = "054c04b850b6435fb6a4726fd811c928";
+            String apikey = URLEncoder.encode(temp, StandardCharsets.UTF_8);
+            String query = String.format("?q=%s&key=%s", place, apikey);
+            String uri = OPENCAGE_API + query;
+            // building the request
+            HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(uri))
+                .build();
+            // send the request and receive response in the form of a String
+            HttpResponse<String> response = HTTP_CLIENT
+                .send(request, BodyHandlers.ofString());
+            // ensure request is okay
+            if (response.statusCode() != 200) {
+                throw new IOException(response.toString());
+            } // if
+            // get request body (the content we requested minus excess
+            String jsonString = response.body();
+            // parse the JSON-formatted string using GSON
+            openCageResponse = GSON
+                .fromJson(jsonString, OpenCageResponse.class);
+            int index = openCageResponse.results.length - 1;
+            double neLatitude = openCageResponse.results[index].bounds.northeast.lat;
+            double neLongitude = openCageResponse.results[index].bounds.northeast.lng;
+            double swLatitude = openCageResponse.results[index].bounds.southwest.lat;
+            double swLongitude = openCageResponse.results[index].bounds.southwest.lng;
+            latitude = (neLatitude + swLatitude) / 2;
+            longitude = (neLongitude + swLongitude) / 2;
+            printOpenCageResponse(openCageResponse);
+        } catch (IOException | InterruptedException e) {
+            System.err.println(e);
+            e.printStackTrace();
+        } // try
+    } // download
+
+    /**
+     * Print a response from the OpenCage API.
+     *
+     * @param openCageResponse the response object
+     */
+    private void printOpenCageResponse(OpenCageResponse openCageResponse) {
+        System.out.println();
+        System.out.println("********* PRETTY JSON STRING FOR " + place + ": *********");
+        System.out.println(GSON.toJson(openCageResponse));
+        System.out.println();
+        System.out.println("********** PARSED RESULTS: **********");
+        System.out.println("latitude = " + latitude);
+        System.out.println("longitude = " + longitude);
+    } // printOpenCageResponse
 
     /** {@inheritDoc} */
     @Override
