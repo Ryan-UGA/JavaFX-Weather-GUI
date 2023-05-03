@@ -11,6 +11,7 @@ import javafx.scene.Scene;
 import javafx.stage.Stage;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
+import javafx.scene.image.ImageView;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -54,6 +55,9 @@ public class ApiApp extends Application {
     HBox top;
     TextField search;
     Button button;
+    /** Below the top hbox will be a label with instructions and then space from cc's. */
+    Label instructions;
+    Label blank;
     /** Root will also consist of the custom components (name of day, forecast). */
     CustomComponent cc1;
     CustomComponent cc2;
@@ -83,15 +87,23 @@ public class ApiApp extends Application {
     /** This is the variable storing the downloads from the NWS API. */
     private NWSResponse nwsResponse;
 
+    /** This is the link to the weekly weather forecast for some area found with vars above. */
+    String forecastLink;
+
+    /** This will be the final response from Json. */
+    ForecastResponse forecastResponse;
+
     /**
      * Constructs an {@code ApiApp} object. This default (i.e., no argument)
      * constructor is executed in Step 2 of the JavaFX Application Life-Cycle.
      */
     public ApiApp() {
         root = new VBox();
-        top = new HBox(8);
+        top = new HBox(10);
         search = new TextField("Type the city here.");
         button = new Button("Get Weather");
+        instructions = new Label("Type a city, state to get the weather for that area.");
+        blank = new Label();
         openCageResponse = new OpenCageResponse();
         cc1 = new CustomComponent();
         cc2 = new CustomComponent();
@@ -113,8 +125,9 @@ public class ApiApp extends Application {
     public void init() {
         top.getChildren().addAll(search, button);
         root.getChildren().add(top);
-        root.getChildren().addAll(cc1, cc2, cc3, cc4, cc5, cc6, cc7, cc8, cc9, cc10,
-            cc11, cc12, cc13, cc14);
+        root.getChildren().addAll(instructions, blank, cc1, cc2, cc3, cc4, cc5, cc6, cc7, cc8,
+            cc9, cc10, cc11, cc12, cc13, cc14);
+        root.setSpacing(10);
         EventHandler<ActionEvent> weather = ae -> getForecastLink();
         button.setOnAction(weather);
     } // init
@@ -182,6 +195,7 @@ public class ApiApp extends Application {
             // parse the JSON-formatted string using GSON
             nwsResponse = GSON
                 .fromJson(jsonString, NWSResponse.class);
+            forecastLink = nwsResponse.properties.forecast;
             printNWSResponse(nwsResponse);
         } catch (IOException | InterruptedException e) {
             System.err.println(e);
@@ -215,7 +229,8 @@ public class ApiApp extends Application {
         System.out.println(GSON.toJson(nwsResponse));
         System.out.println();
         System.out.println("********** PARSED RESULTS: **********\n");
-        System.out.println("forecast link = " + nwsResponse.properties.forecast);
+        System.out.println("forecast link should = " + nwsResponse.properties.forecast);
+        System.out.println("forecast link actually = " + forecastLink);
     } // printNWSResponse
 
     /** {@inheritDoc} */
@@ -225,7 +240,7 @@ public class ApiApp extends Application {
         // demonstrate how to load local asset using "file:resources/"
         scene = new Scene(root);
         // setup stage
-        stage.setTitle("The City's Weekly Weather Forecast!");
+        stage.setTitle("Weatherman Barnes");
         stage.setScene(scene);
         stage.setOnCloseRequest(event -> Platform.exit());
         stage.sizeToScene();

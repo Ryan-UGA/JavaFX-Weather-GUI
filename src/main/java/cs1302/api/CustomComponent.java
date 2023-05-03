@@ -9,13 +9,21 @@ import javafx.scene.control.Label;
  * one for the detailed forecast.
  */
 public class CustomComponent extends HBox {
+    /** These are all variables associated with the day name. */
     Label name;
+
+    /** These are all variables associated with the detailed forecast. */
     Label summary;
 
-    /** This creates a new {@code CustomComponent} object. */
-    public CustomComponent() {
-        name = new Label("name");
-        summary = new Label("detailedForecast");
+    /**
+     * This constructs a new {@code CustomComponent} for the ApiApp.
+     *
+     // @param n the nth custom component
+     */
+    public CustomComponent(/** int num */) {
+        name = new Label("Name");
+        summary = new Label("Label");
         this.getChildren().addAll(name, summary);
+        this.setSpacing(20);
     } // CustomComponent
 } // CustomComponent
