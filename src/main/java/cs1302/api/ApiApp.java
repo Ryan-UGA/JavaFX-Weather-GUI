@@ -34,29 +34,52 @@ public class ApiApp extends Application {
         .version(HttpClient.Version.HTTP_2)           // uses HTTP protocol version 2 where possible
         .followRedirects(HttpClient.Redirect.NORMAL)  // always redirects, except from HTTPS to HTTP
         .build();                                     // builds and returns a HttpClient object
+
     /** Google {@code Gson} object for parsing JSON-formatted strings. */
     public static Gson GSON = new GsonBuilder()
         .setPrettyPrinting()                          // enable nice output when printing
         .create();                                    // builds and returns a Gson object
+
     /** This is the base of the OpenCage API. */
     private static final String OPENCAGE_API = "https://api.opencagedata.com/geocode/v1/json?q=";
+
     /** This is the base of the National Weather Service API. */
     private static final String NWS_API = "https://api.weather.gov/points/";
-    /** Variables used below. */
+
+    /** Stage, scene, and components in app. */
     Stage stage;
     Scene scene;
     VBox root;
     /** Root consists of this hbox of items on the top. */
-    HBox hbox;
+    HBox top;
     TextField search;
     Button button;
+    /** Root will also consist of the custom components (name of day, forecast). */
+    CustomComponent cc1;
+    CustomComponent cc2;
+    CustomComponent cc3;
+    CustomComponent cc4;
+    CustomComponent cc5;
+    CustomComponent cc6;
+    CustomComponent cc7;
+    CustomComponent cc8;
+    CustomComponent cc9;
+    CustomComponent cc10;
+    CustomComponent cc11;
+    CustomComponent cc12;
+    CustomComponent cc13;
+    CustomComponent cc14;
+
     /** This is the variable storing the downloads from the OpenCage API. */
     private OpenCageResponse openCageResponse;
+
     /** This is the city, state that the user will enter. */
     private String place;
+
     /** This will be the latitude and longitude of the city the user inputs. */
     private double latitude;
     private double longitude;
+
     /** This is the variable storing the downloads from the NWS API. */
     private NWSResponse nwsResponse;
 
@@ -66,16 +89,32 @@ public class ApiApp extends Application {
      */
     public ApiApp() {
         root = new VBox();
-        hbox = new HBox(8);
+        top = new HBox(8);
         search = new TextField("Type the city here.");
         button = new Button("Get Weather");
         openCageResponse = new OpenCageResponse();
+        cc1 = new CustomComponent();
+        cc2 = new CustomComponent();
+        cc3 = new CustomComponent();
+        cc4 = new CustomComponent();
+        cc5 = new CustomComponent();
+        cc6 = new CustomComponent();
+        cc7 = new CustomComponent();
+        cc8 = new CustomComponent();
+        cc9 = new CustomComponent();
+        cc10 = new CustomComponent();
+        cc11 = new CustomComponent();
+        cc12 = new CustomComponent();
+        cc13 = new CustomComponent();
+        cc14 = new CustomComponent();
     } // ApiApp
 
     /** {@inheritDoc} */
     public void init() {
-        hbox.getChildren().addAll(search, button);
-        root.getChildren().add(hbox);
+        top.getChildren().addAll(search, button);
+        root.getChildren().add(top);
+        root.getChildren().addAll(cc1, cc2, cc3, cc4, cc5, cc6, cc7, cc8, cc9, cc10,
+            cc11, cc12, cc13, cc14);
         EventHandler<ActionEvent> weather = ae -> getForecastLink();
         button.setOnAction(weather);
     } // init
@@ -186,7 +225,7 @@ public class ApiApp extends Application {
         // demonstrate how to load local asset using "file:resources/"
         scene = new Scene(root);
         // setup stage
-        stage.setTitle("ApiApp!");
+        stage.setTitle("The City's Weekly Weather Forecast!");
         stage.setScene(scene);
         stage.setOnCloseRequest(event -> Platform.exit());
         stage.sizeToScene();
