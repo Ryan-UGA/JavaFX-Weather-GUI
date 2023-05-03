@@ -128,7 +128,8 @@ public class ApiApp extends Application {
         root.getChildren().addAll(instructions, blank, cc1, cc2, cc3, cc4, cc5, cc6, cc7, cc8,
             cc9, cc10, cc11, cc12, cc13, cc14);
         root.setSpacing(10);
-        EventHandler<ActionEvent> weather = ae -> getForecastLink();
+        /** First, getLatLong occurs. Then, getForecastLink occurs. Lastly, getWeather occurs. */
+        EventHandler<ActionEvent> weather = ae -> getWeather();
         button.setOnAction(weather);
     } // init
 
@@ -163,7 +164,7 @@ public class ApiApp extends Application {
             double swLongitude = openCageResponse.results[index].bounds.southwest.lng;
             latitude = (neLatitude + swLatitude) / 2;
             longitude = (neLongitude + swLongitude) / 2;
-            printOpenCageResponse(openCageResponse);
+            System.out.println("getLatLong method is done.");
         } catch (IOException | InterruptedException e) {
             System.err.println(e);
             e.printStackTrace();
@@ -178,7 +179,6 @@ public class ApiApp extends Application {
         getLatLong();
         try {
             String uri = NWS_API + latitude + "," + longitude;
-            System.out.println("uri = " + uri);
             // building the request
             HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(uri))
@@ -196,12 +196,41 @@ public class ApiApp extends Application {
             nwsResponse = GSON
                 .fromJson(jsonString, NWSResponse.class);
             forecastLink = nwsResponse.properties.forecast;
-            printNWSResponse(nwsResponse);
+            System.out.println("getForecastLink method is done.");
         } catch (IOException | InterruptedException e) {
             System.err.println(e);
             e.printStackTrace();
-        } //
+        } // try
     } // getForecastLink
+
+    /** This is the final response that will get the weather with the updated forecastLink. */
+    private void getWeather() {
+        getForecastLink();
+        System.out.println("getWeather method has begun.");
+        try {
+            String uri = forecastLink;
+            // building the request
+            HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(uri))
+                .build();
+            // send the request and receive response in the form of a String
+            HttpResponse<String> response = HTTP_CLIENT
+                .send(request, BodyHandlers.ofString());
+            // ensure request is okay
+            if (response.statusCode() != 200) {
+                throw new IOException(response.toString());
+            } // if
+            // get request body (the content we requested minus excess
+            String jsonString = response.body();
+            // parse the JSON-formatted string using GSON
+            forecastResponse = GSON
+                .fromJson(jsonString, ForecastResponse.class);
+            printForecastResponse(forecastResponse);
+        } catch (IOException | InterruptedException e) {
+            System.err.println(e);
+            e.printStackTrace();
+        } // try
+    } // getWeather
 
     /**
      * Print a response from the OpenCage API.
@@ -229,9 +258,26 @@ public class ApiApp extends Application {
         System.out.println(GSON.toJson(nwsResponse));
         System.out.println();
         System.out.println("********** PARSED RESULTS: **********\n");
-        System.out.println("forecast link should = " + nwsResponse.properties.forecast);
         System.out.println("forecast link actually = " + forecastLink);
     } // printNWSResponse
+
+    /**
+     * Print a response from the NWS API (forecast response).
+     *
+     * @param forecastResponse the final response that got the weekly weather forecast
+     */
+    private void printForecastResponse(ForecastResponse forecastResponse) {
+        System.out.println();
+        System.out.println("********* PRETTY JSON STRING FOR ForecastResponse : *********");
+        System.out.println(GSON.toJson(forecastResponse));
+        System.out.println();
+        System.out.println("********** PARSED RESULTS: **********\n");
+        System.out.println("Printing periods array below");
+        for (int i = 0; i < forecastResponse.properties.periods.length; i++) {
+            System.out.println("Name = " + forecastResponse.properties.periods[i].name);
+            System.out.println("dF = " + forecastResponse.properties.periods[i].detailedForecast);
+        } // for
+    } // printForecastResponse
 
     /** {@inheritDoc} */
     @Override
