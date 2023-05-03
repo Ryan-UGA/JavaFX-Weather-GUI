@@ -6,11 +6,11 @@ import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.VBox;
-import javafx.scene.layout.HBox;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
+import javafx.scene.layout.HBox;
 import javafx.scene.image.ImageView;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -25,6 +25,7 @@ import java.net.URLEncoder;
 import java.io.IOException;
 import javafx.event.EventHandler;
 import javafx.event.ActionEvent;
+import javafx.scene.layout.Priority;
 
 /**
  * REPLACE WITH NON-SHOUTING DESCRIPTION OF YOUR APP.
@@ -128,6 +129,7 @@ public class ApiApp extends Application {
         root.getChildren().addAll(instructions, blank, cc1, cc2, cc3, cc4, cc5, cc6, cc7, cc8,
             cc9, cc10, cc11, cc12, cc13, cc14);
         root.setSpacing(10);
+        cc1.setHgrow(cc1.summary, Priority.ALWAYS);
         /** First, getLatLong occurs. Then, getForecastLink occurs. Lastly, getWeather occurs. */
         EventHandler<ActionEvent> weather = ae -> getWeather();
         button.setOnAction(weather);

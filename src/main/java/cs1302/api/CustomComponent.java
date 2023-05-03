@@ -2,7 +2,6 @@ package cs1302.api;
 
 import javafx.scene.layout.HBox;
 import javafx.scene.control.Label;
-import javafx.scene.layout.Priority;
 
 /**
  * This class is a custom component that will be used to display the detailed weather forecast.
@@ -25,6 +24,7 @@ public class CustomComponent extends HBox {
         summary = new Label("Label");
         this.getChildren().addAll(nameLabel, summary);
         this.setSpacing(20);
+
     } // CustomComponent
 
     /**
