@@ -225,6 +225,19 @@ public class ApiApp extends Application {
             forecastResponse = GSON
                 .fromJson(jsonString, ForecastResponse.class);
             cc1.setComponents(forecastResponse);
+            cc2.setComponents(forecastResponse);
+            cc3.setComponents(forecastResponse);
+            cc4.setComponents(forecastResponse);
+            cc5.setComponents(forecastResponse);
+            cc6.setComponents(forecastResponse);
+            cc7.setComponents(forecastResponse);
+            cc8.setComponents(forecastResponse);
+            cc9.setComponents(forecastResponse);
+            cc10.setComponents(forecastResponse);
+            cc11.setComponents(forecastResponse);
+            cc12.setComponents(forecastResponse);
+            cc13.setComponents(forecastResponse);
+            cc14.setComponents(forecastResponse);
         } catch (IOException | InterruptedException e) {
             System.err.println(e);
             e.printStackTrace();
