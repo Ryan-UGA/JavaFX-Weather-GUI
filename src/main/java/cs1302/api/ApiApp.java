@@ -26,6 +26,9 @@ import java.io.IOException;
 import javafx.event.EventHandler;
 import javafx.event.ActionEvent;
 import javafx.scene.layout.Priority;
+import javafx.scene.control.Dialog;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.ButtonBar.ButtonData;
 
 /**
  * REPLACE WITH NON-SHOUTING DESCRIPTION OF YOUR APP.
@@ -55,9 +58,11 @@ public class ApiApp extends Application {
     /** Root consists of this hbox of items on the top. */
     HBox top;
     TextField search;
-    Button button;
+    Button getDetailedForecasts;
     /** Below the top hbox will be a label with instructions and then space from cc's. */
+    Label format;
     Label instructions;
+    Label extraNote;
     Label blank;
     /** Root will also consist of the custom components (name of day, forecast). */
     CustomComponent cc1;
@@ -94,6 +99,9 @@ public class ApiApp extends Application {
     /** This will be the final response from Json. */
     ForecastResponse forecastResponse;
 
+    /** This will determine if there is an IO or Interrupted Exception. */
+    boolean isIO = false;
+
     /**
      * Constructs an {@code ApiApp} object. This default (i.e., no argument)
      * constructor is executed in Step 2 of the JavaFX Application Life-Cycle.
@@ -101,11 +109,15 @@ public class ApiApp extends Application {
     public ApiApp() {
         root = new VBox();
         top = new HBox(10);
-        search = new TextField("Type the city here.");
-        button = new Button("Get Weather");
-        instructions = new Label("Type a city, state to get the weather for that area.");
+        search = new TextField("Type the city and state here.");
+        getDetailedForecasts = new Button("Get Forecasts");
+        format = new Label("Format of input can be city OR city, state");
+        instructions = new Label("Type the city and press the button to get the forecasts"
+            + " for this week.");
+        String extra = "Warning: if the city entered is entered with the wrong state, weather " +
+            "at some location in said state might result.";
+        extraNote = new Label(extra);
         blank = new Label();
-        openCageResponse = new OpenCageResponse();
         cc1 = new CustomComponent(1);
         cc2 = new CustomComponent(2);
         cc3 = new CustomComponent(3);
@@ -124,125 +136,163 @@ public class ApiApp extends Application {
 
     /** {@inheritDoc} */
     public void init() {
-        top.getChildren().addAll(search, button);
+        top.getChildren().addAll(search, getDetailedForecasts);
         root.getChildren().add(top);
-        root.getChildren().addAll(instructions, blank, cc1, cc2, cc3, cc4, cc5, cc6, cc7, cc8,
-            cc9, cc10, cc11, cc12, cc13, cc14);
+        root.getChildren().addAll(format, instructions, extraNote, blank);
+        root.getChildren().addAll(cc1, cc2, cc3, cc4, cc5, cc6, cc7,
+            cc8, cc9, cc10, cc11, cc12, cc13, cc14);
         root.setSpacing(10);
-        cc1.setHgrow(cc1.summary, Priority.ALWAYS);
-        /** First, getLatLong occurs. Then, getForecastLink occurs. Lastly, getWeather occurs. */
-        EventHandler<ActionEvent> weather = ae -> getWeather();
-        button.setOnAction(weather);
+        top.setHgrow(search, Priority.ALWAYS);
+        cc1.setHgrow(cc1.nameLabel, Priority.ALWAYS);
+        EventHandler<ActionEvent> df = ae -> {
+            ButtonType ok = new ButtonType("OK", ButtonData.OK_DONE);
+            Dialog<String> dialogBox = new Dialog<>();
+            dialogBox.getDialogPane().getButtonTypes().add(ok);
+            dialogBox.setTitle("Error");
+            String message = "";
+            try {
+                setDetailedForecasts();
+            } catch (IOException | InterruptedException e) {
+                message = "I'm sorry, but there was a problem loading the webpage. There " +
+                    "might be multiple of the same city or this city might be in a country " +
+                    "besides the United States. Please make sure to enter a valid city " +
+                    "in the United States.";
+                dialogBox.setContentText(message);
+                dialogBox.showAndWait();
+            } catch (ArrayIndexOutOfBoundsException aioobe) {
+                message = "I'm sorry, but this is not a valid input. Please try " +
+                    "again, and make sure to enter a city in the United States.";
+                dialogBox.setContentText(message);
+                dialogBox.showAndWait();
+            } catch (NullPointerException npe) {
+                message = npe.getMessage();
+                message += "\n\nThe input was invalid. Please make sure to enter a valid city " +
+                    "in the United States.";
+                dialogBox.setContentText(message);
+                dialogBox.showAndWait();
+            } // try
+        }; // weather lambda
+        getDetailedForecasts.setOnAction(df);
     } // init
 
-    /** This method gets the latitude and longitude of an inputted city using OpenCage API. */
-    private void getLatLong() {
-        try {
-            place = URLEncoder.encode(search.getText(), StandardCharsets.UTF_8);
-            String temp = "054c04b850b6435fb6a4726fd811c928";
-            String apikey = URLEncoder.encode(temp, StandardCharsets.UTF_8);
-            String query = String.format("?q=%s&key=%s", place, apikey);
-            String uri = OPENCAGE_API + query;
-            // building the request
-            HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(uri))
-                .build();
-            // send the request and receive response in the form of a String
-            HttpResponse<String> response = HTTP_CLIENT
-                .send(request, BodyHandlers.ofString());
-            // ensure request is okay
-            if (response.statusCode() != 200) {
-                throw new IOException(response.toString());
-            } // if
-            // get request body (the content we requested minus excess
-            String jsonString = response.body();
-            // parse the JSON-formatted string using GSON
-            openCageResponse = GSON
-                .fromJson(jsonString, OpenCageResponse.class);
-            int index = openCageResponse.results.length - 1;
-            double neLatitude = openCageResponse.results[index].bounds.northeast.lat;
-            double neLongitude = openCageResponse.results[index].bounds.northeast.lng;
-            double swLatitude = openCageResponse.results[index].bounds.southwest.lat;
-            double swLongitude = openCageResponse.results[index].bounds.southwest.lng;
-            latitude = (neLatitude + swLatitude) / 2;
-            longitude = (neLongitude + swLongitude) / 2;
-        } catch (IOException | InterruptedException e) {
-            System.err.println(e);
-            e.printStackTrace();
-        } // try
+    /**
+     * This method gets the latitude and longitude of an inputted city using OpenCage API.
+     *
+     * @throws IOException when the site doesn't pull up
+     * @throws InterruptedException when the site doesn't pull up
+     */
+    private void getLatLong() throws IOException, InterruptedException {
+        place = URLEncoder.encode(search.getText(), StandardCharsets.UTF_8);
+        String temp = "054c04b850b6435fb6a4726fd811c928";
+        String apikey = URLEncoder.encode(temp, StandardCharsets.UTF_8);
+        String query = String.format("?q=%s&key=%s", place, apikey);
+        String uri = OPENCAGE_API + query;
+        // building the request
+        HttpRequest request = HttpRequest.newBuilder()
+            .uri(URI.create(uri))
+            .build();
+        // send the request and receive response in the form of a String
+        HttpResponse<String> response = HTTP_CLIENT
+            .send(request, BodyHandlers.ofString());
+        // ensure request is okay
+        if (response.statusCode() != 200) {
+
+            throw new IOException(response.toString());
+        } // if
+        // get request body (the content we requested minus excess
+        String jsonString = response.body();
+        // parse the JSON-formatted string using GSON
+        openCageResponse = GSON
+            .fromJson(jsonString, OpenCageResponse.class);
+        int index = openCageResponse.results.length - 1;
+        double neLatitude = openCageResponse.results[index].bounds.northeast.lat;
+        double neLongitude = openCageResponse.results[index].bounds.northeast.lng;
+        double swLatitude = openCageResponse.results[index].bounds.southwest.lat;
+        double swLongitude = openCageResponse.results[index].bounds.southwest.lng;
+        latitude = (neLatitude + swLatitude) / 2;
+        longitude = (neLongitude + swLongitude) / 2;
+        printOpenCageResponse(openCageResponse);
     } // getLatLong
 
     /**
      * This method will get the weather at specified latitude and longitude using
      * the National Weather Service API.
+     *
+     * @throws IOException when the site doesn't pull up
+     * @throws InterruptedException when the site doesn't pull up
      */
-    private void getForecastLink() {
+    private void getForecastLink() throws IOException, InterruptedException {
         getLatLong();
-        try {
-            String uri = NWS_API + latitude + "," + longitude;
-            // building the request
-            HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(uri))
-                .build();
-            // send the request and receive response in the form of a String
-            HttpResponse<String> response = HTTP_CLIENT
-                .send(request, BodyHandlers.ofString());
-            // ensure request is okay
-            if (response.statusCode() != 200) {
-                throw new IOException(response.toString());
-            } // if
-            // get request body (the content we requested minus excess
-            String jsonString = response.body();
-            // parse the JSON-formatted string using GSON
-            nwsResponse = GSON
-                .fromJson(jsonString, NWSResponse.class);
-            forecastLink = nwsResponse.properties.forecast;
-        } catch (IOException | InterruptedException e) {
-            System.err.println(e);
-            e.printStackTrace();
-        } // try
+        String uri = NWS_API + latitude + "," + longitude;
+        // building the request
+        HttpRequest request = HttpRequest.newBuilder()
+            .uri(URI.create(uri))
+            .build();
+        // send the request and receive response in the form of a String
+        HttpResponse<String> response = HTTP_CLIENT
+            .send(request, BodyHandlers.ofString());
+        // ensure request is okay
+        if (response.statusCode() != 200) {
+            throw new IOException(response.toString());
+        } // if
+        // get request body (the content we requested minus excess
+        String jsonString = response.body();
+        // parse the JSON-formatted string using GSON
+        nwsResponse = GSON
+            .fromJson(jsonString, NWSResponse.class);
+        forecastLink = nwsResponse.properties.forecast;
     } // getForecastLink
 
-    /** This is the final response that will get the weather with the updated forecastLink. */
-    private void getWeather() {
+    /**
+     * This is the final response that will get the weather with the updated forecastLink.
+     *
+     * @throws IOException when the site doesn't pull up
+     * @throws InterruptedException when the site doesn't pull up
+     */
+    private void getWeather() throws IOException, InterruptedException {
         getForecastLink();
-        try {
-            String uri = forecastLink;
-            // building the request
-            HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(uri))
-                .build();
-            // send the request and receive response in the form of a String
-            HttpResponse<String> response = HTTP_CLIENT
-                .send(request, BodyHandlers.ofString());
-            // ensure request is okay
-            if (response.statusCode() != 200) {
-                throw new IOException(response.toString());
-            } // if
-            // get request body (the content we requested minus excess
-            String jsonString = response.body();
-            // parse the JSON-formatted string using GSON
-            forecastResponse = GSON
-                .fromJson(jsonString, ForecastResponse.class);
-            cc1.setComponents(forecastResponse);
-            cc2.setComponents(forecastResponse);
-            cc3.setComponents(forecastResponse);
-            cc4.setComponents(forecastResponse);
-            cc5.setComponents(forecastResponse);
-            cc6.setComponents(forecastResponse);
-            cc7.setComponents(forecastResponse);
-            cc8.setComponents(forecastResponse);
-            cc9.setComponents(forecastResponse);
-            cc10.setComponents(forecastResponse);
-            cc11.setComponents(forecastResponse);
-            cc12.setComponents(forecastResponse);
-            cc13.setComponents(forecastResponse);
-            cc14.setComponents(forecastResponse);
-        } catch (IOException | InterruptedException e) {
-            System.err.println(e);
-            e.printStackTrace();
-        } // try
+        String uri = forecastLink;
+        // building the request
+        HttpRequest request = HttpRequest.newBuilder()
+            .uri(URI.create(uri))
+            .build();
+        // send the request and receive response in the form of a String
+        HttpResponse<String> response = HTTP_CLIENT
+            .send(request, BodyHandlers.ofString());
+        // ensure request is okay
+        if (response.statusCode() != 200) {
+            throw new IOException(response.toString());
+        } // if
+        // get request body (the content we requested minus excess
+        String jsonString = response.body();
+        // parse the JSON-formatted string using GSON
+        forecastResponse = GSON
+            .fromJson(jsonString, ForecastResponse.class);
     } // getWeather
+
+    /**
+     * This method will set detailed forecasts for every custom component.
+     *
+     * @throws IOException when the site doesn't pull up
+     * @throws InterruptedException when the site doesn't pull up
+     */
+    private void setDetailedForecasts() throws IOException, InterruptedException {
+        getWeather();
+        cc1.setDetailedForecast(forecastResponse);
+        cc2.setDetailedForecast(forecastResponse);
+        cc3.setDetailedForecast(forecastResponse);
+        cc4.setDetailedForecast(forecastResponse);
+        cc5.setDetailedForecast(forecastResponse);
+        cc6.setDetailedForecast(forecastResponse);
+        cc7.setDetailedForecast(forecastResponse);
+        cc8.setDetailedForecast(forecastResponse);
+        cc9.setDetailedForecast(forecastResponse);
+        cc10.setDetailedForecast(forecastResponse);
+        cc11.setDetailedForecast(forecastResponse);
+        cc12.setDetailedForecast(forecastResponse);
+        cc13.setDetailedForecast(forecastResponse);
+        cc14.setDetailedForecast(forecastResponse);
+    } // setDetailedForecasts
 
     /**
      * Print a response from the OpenCage API.
@@ -298,7 +348,7 @@ public class ApiApp extends Application {
         // demonstrate how to load local asset using "file:resources/"
         scene = new Scene(root);
         // setup stage
-        stage.setTitle("Weatherman Barnes");
+        stage.setTitle("Weather in US Cities");
         stage.setScene(scene);
         stage.setOnCloseRequest(event -> Platform.exit());
         stage.sizeToScene();
