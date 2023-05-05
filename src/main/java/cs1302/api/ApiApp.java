@@ -75,10 +75,6 @@ public class ApiApp extends Application {
     CustomComponent cc8;
     CustomComponent cc9;
     CustomComponent cc10;
-    CustomComponent cc11;
-    CustomComponent cc12;
-    CustomComponent cc13;
-    CustomComponent cc14;
 
     /** This is the variable storing the downloads from the OpenCage API. */
     OpenCageResponse openCageResponse;
@@ -99,9 +95,6 @@ public class ApiApp extends Application {
     /** This will be the final response from Json. */
     ForecastResponse forecastResponse;
 
-    /** This will determine if there is an IO or Interrupted Exception. */
-    boolean isIO = false;
-
     /**
      * Constructs an {@code ApiApp} object. This default (i.e., no argument)
      * constructor is executed in Step 2 of the JavaFX Application Life-Cycle.
@@ -113,9 +106,9 @@ public class ApiApp extends Application {
         getDetailedForecasts = new Button("Get Forecasts");
         format = new Label("Format of input can be city OR city, state");
         instructions = new Label("Type the city and press the button to get the forecasts"
-            + " for this week.");
-        String extra = "Warning: if the city entered is entered with the wrong state, weather " +
-            "at some location in said state might result.";
+            + " for the next 10 time periods.");
+        String extra = "Warning: If the city entered is entered with the wrong state, weather " +
+            "at some location in said state might be the result.";
         extraNote = new Label(extra);
         blank = new Label();
         cc1 = new CustomComponent(1);
@@ -128,10 +121,6 @@ public class ApiApp extends Application {
         cc8 = new CustomComponent(8);
         cc9 = new CustomComponent(9);
         cc10 = new CustomComponent(10);
-        cc11 = new CustomComponent(11);
-        cc12 = new CustomComponent(12);
-        cc13 = new CustomComponent(13);
-        cc14 = new CustomComponent(14);
     } // ApiApp
 
     /** {@inheritDoc} */
@@ -139,11 +128,9 @@ public class ApiApp extends Application {
         top.getChildren().addAll(search, getDetailedForecasts);
         root.getChildren().add(top);
         root.getChildren().addAll(format, instructions, extraNote, blank);
-        root.getChildren().addAll(cc1, cc2, cc3, cc4, cc5, cc6, cc7,
-            cc8, cc9, cc10, cc11, cc12, cc13, cc14);
+        root.getChildren().addAll(cc1, cc2, cc3, cc4, cc5, cc6, cc7, cc8, cc9, cc10);
         root.setSpacing(10);
         top.setHgrow(search, Priority.ALWAYS);
-        cc1.setHgrow(cc1.nameLabel, Priority.ALWAYS);
         EventHandler<ActionEvent> df = ae -> {
             ButtonType ok = new ButtonType("OK", ButtonData.OK_DONE);
             Dialog<String> dialogBox = new Dialog<>();
@@ -152,6 +139,16 @@ public class ApiApp extends Application {
             String message = "";
             try {
                 setDetailedForecasts();
+                cc1.fixDetailedForecast(forecastResponse.properties.periods);
+                cc2.fixDetailedForecast(forecastResponse.properties.periods);
+                cc3.fixDetailedForecast(forecastResponse.properties.periods);
+                cc4.fixDetailedForecast(forecastResponse.properties.periods);
+                cc5.fixDetailedForecast(forecastResponse.properties.periods);
+                cc6.fixDetailedForecast(forecastResponse.properties.periods);
+                cc7.fixDetailedForecast(forecastResponse.properties.periods);
+                cc8.fixDetailedForecast(forecastResponse.properties.periods);
+                cc9.fixDetailedForecast(forecastResponse.properties.periods);
+                cc10.fixDetailedForecast(forecastResponse.properties.periods);
             } catch (IOException | InterruptedException e) {
                 message = "I'm sorry, but there was a problem loading the webpage. There " +
                     "might be multiple of the same city or this city might be in a country " +
@@ -211,7 +208,6 @@ public class ApiApp extends Application {
         double swLongitude = openCageResponse.results[index].bounds.southwest.lng;
         latitude = (neLatitude + swLatitude) / 2;
         longitude = (neLongitude + swLongitude) / 2;
-        printOpenCageResponse(openCageResponse);
     } // getLatLong
 
     /**
@@ -241,6 +237,7 @@ public class ApiApp extends Application {
         nwsResponse = GSON
             .fromJson(jsonString, NWSResponse.class);
         forecastLink = nwsResponse.properties.forecast;
+        printNWSResponse(nwsResponse);
     } // getForecastLink
 
     /**
@@ -288,10 +285,6 @@ public class ApiApp extends Application {
         cc8.setDetailedForecast(forecastResponse);
         cc9.setDetailedForecast(forecastResponse);
         cc10.setDetailedForecast(forecastResponse);
-        cc11.setDetailedForecast(forecastResponse);
-        cc12.setDetailedForecast(forecastResponse);
-        cc13.setDetailedForecast(forecastResponse);
-        cc14.setDetailedForecast(forecastResponse);
     } // setDetailedForecasts
 
     /**
@@ -349,6 +342,8 @@ public class ApiApp extends Application {
         scene = new Scene(root);
         // setup stage
         stage.setTitle("Weather in US Cities");
+        stage.setMaxWidth(1250.0);
+        stage.setMaxHeight(700.0);
         stage.setScene(scene);
         stage.setOnCloseRequest(event -> Platform.exit());
         stage.sizeToScene();
