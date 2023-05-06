@@ -105,6 +105,11 @@ public class ApiApp extends Application {
     /** This will be the final response from Json. */
     ForecastResponse forecastResponse;
 
+    /** These are variables that will be part of the dialog box for error handling. */
+    ButtonType ok;
+    Dialog<String> dialogBox;
+    String message = "";
+
     /**
      * Constructs an {@code ApiApp} object. This default (i.e., no argument)
      * constructor is executed in Step 2 of the JavaFX Application Life-Cycle.
@@ -131,6 +136,10 @@ public class ApiApp extends Application {
         cc8 = new CustomComponent(8);
         cc9 = new CustomComponent(9);
         cc10 = new CustomComponent(10);
+        ok = new ButtonType("OK", ButtonData.OK_DONE);
+        dialogBox = new Dialog<>();
+        dialogBox.getDialogPane().getButtonTypes().add(ok);
+        dialogBox.setTitle("Error");
     } // ApiApp
 
     /** {@inheritDoc} */
@@ -141,12 +150,7 @@ public class ApiApp extends Application {
         root.getChildren().addAll(cc1, cc2, cc3, cc4, cc5, cc6, cc7, cc8, cc9, cc10);
         root.setSpacing(10);
         top.setHgrow(search, Priority.ALWAYS);
-        Runnable df = () -> {
-            ButtonType ok = new ButtonType("OK", ButtonData.OK_DONE);
-            Dialog<String> dialogBox = new Dialog<>();
-            dialogBox.getDialogPane().getButtonTypes().add(ok);
-            dialogBox.setTitle("Error");
-            String message = "";
+        EventHandler<ActionEvent> df = ae -> {
             try {
                 setDetailedForecasts();
                 cc1.fixDetailedForecast(forecastResponse.properties.periods);
@@ -172,14 +176,13 @@ public class ApiApp extends Application {
                 dialogBox.setContentText(message);
                 dialogBox.showAndWait();
             } catch (NullPointerException npe) {
-                message = npe.getMessage();
-                message += "\n\nThe input was invalid. Please make sure to enter a valid city " +
+                message = "\n\nThe input was invalid. Please make sure to enter a valid city " +
                     "in the United States.";
                 dialogBox.setContentText(message);
                 dialogBox.showAndWait();
             } // try
         }; // weather lambda
-        getDetailedForecasts.setOnAction(event -> runInNewThread(df));
+        getDetailedForecasts.setOnAction(df);
     } // init
 
     /**
@@ -189,6 +192,9 @@ public class ApiApp extends Application {
      * @throws InterruptedException when the site doesn't pull up
      */
     private void getLatLong() throws IOException, InterruptedException {
+        if (search.getText().length() == 0) {
+            throw new NullPointerException();
+        } // if
         place = URLEncoder.encode(search.getText(), StandardCharsets.UTF_8);
         String temp = "054c04b850b6435fb6a4726fd811c928";
         String apikey = URLEncoder.encode(temp, StandardCharsets.UTF_8);
@@ -203,7 +209,6 @@ public class ApiApp extends Application {
             .send(request, BodyHandlers.ofString());
         // ensure request is okay
         if (response.statusCode() != 200) {
-
             throw new IOException(response.toString());
         } // if
         // get request body (the content we requested minus excess
@@ -278,17 +283,6 @@ public class ApiApp extends Application {
     } // getWeather
 
     /**
-     * This will run said runnable in a new thread.
-     *
-     * @param target contains what the thread will do when started
-     */
-    private void runInNewThread(Runnable target) {
-        Thread t = new Thread(target);
-        t.setDaemon(true);
-        t.start();
-    } // runInNewThread
-
-    /**
      * This method will set detailed forecasts for every custom component.
      *
      * @throws IOException when the site doesn't pull up
@@ -296,16 +290,16 @@ public class ApiApp extends Application {
      */
     private void setDetailedForecasts() throws IOException, InterruptedException {
         getWeather();
-        Platform.runLater(() -> cc1.setDetailedForecast(forecastResponse));
-        Platform.runLater(() -> cc2.setDetailedForecast(forecastResponse));
-        Platform.runLater(() -> cc3.setDetailedForecast(forecastResponse));
-        Platform.runLater(() -> cc4.setDetailedForecast(forecastResponse));
-        Platform.runLater(() -> cc5.setDetailedForecast(forecastResponse));
-        Platform.runLater(() -> cc6.setDetailedForecast(forecastResponse));
-        Platform.runLater(() -> cc7.setDetailedForecast(forecastResponse));
-        Platform.runLater(() -> cc8.setDetailedForecast(forecastResponse));
-        Platform.runLater(() -> cc9.setDetailedForecast(forecastResponse));
-        Platform.runLater(() -> cc10.setDetailedForecast(forecastResponse));
+        cc1.setDetailedForecast(forecastResponse);
+        cc2.setDetailedForecast(forecastResponse);
+        cc3.setDetailedForecast(forecastResponse);
+        cc4.setDetailedForecast(forecastResponse);
+        cc5.setDetailedForecast(forecastResponse);
+        cc6.setDetailedForecast(forecastResponse);
+        cc7.setDetailedForecast(forecastResponse);
+        cc8.setDetailedForecast(forecastResponse);
+        cc9.setDetailedForecast(forecastResponse);
+        cc10.setDetailedForecast(forecastResponse);
     } // setDetailedForecasts
 
     /**
