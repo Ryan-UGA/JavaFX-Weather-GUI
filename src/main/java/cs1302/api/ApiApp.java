@@ -150,39 +150,49 @@ public class ApiApp extends Application {
         root.getChildren().addAll(cc1, cc2, cc3, cc4, cc5, cc6, cc7, cc8, cc9, cc10);
         root.setSpacing(10);
         top.setHgrow(search, Priority.ALWAYS);
-        EventHandler<ActionEvent> df = ae -> {
+        Runnable df = () -> {
             try {
                 setDetailedForecasts();
-                cc1.fixDetailedForecast(forecastResponse.properties.periods);
-                cc2.fixDetailedForecast(forecastResponse.properties.periods);
-                cc3.fixDetailedForecast(forecastResponse.properties.periods);
-                cc4.fixDetailedForecast(forecastResponse.properties.periods);
-                cc5.fixDetailedForecast(forecastResponse.properties.periods);
-                cc6.fixDetailedForecast(forecastResponse.properties.periods);
-                cc7.fixDetailedForecast(forecastResponse.properties.periods);
-                cc8.fixDetailedForecast(forecastResponse.properties.periods);
-                cc9.fixDetailedForecast(forecastResponse.properties.periods);
-                cc10.fixDetailedForecast(forecastResponse.properties.periods);
+                Platform.runLater(() ->
+                    cc1.fixDetailedForecast(forecastResponse.properties.periods));
+                Platform.runLater(() ->
+                    cc2.fixDetailedForecast(forecastResponse.properties.periods));
+                Platform.runLater(() ->
+                    cc3.fixDetailedForecast(forecastResponse.properties.periods));
+                Platform.runLater(() ->
+                    cc4.fixDetailedForecast(forecastResponse.properties.periods));
+                Platform.runLater(() ->
+                    cc5.fixDetailedForecast(forecastResponse.properties.periods));
+                Platform.runLater(() ->
+                    cc6.fixDetailedForecast(forecastResponse.properties.periods));
+                Platform.runLater(() ->
+                    cc7.fixDetailedForecast(forecastResponse.properties.periods));
+                Platform.runLater(() ->
+                    cc8.fixDetailedForecast(forecastResponse.properties.periods));
+                Platform.runLater(() ->
+                    cc9.fixDetailedForecast(forecastResponse.properties.periods));
+                Platform.runLater(() ->
+                    cc10.fixDetailedForecast(forecastResponse.properties.periods));
             } catch (IOException | InterruptedException e) {
                 message = "I'm sorry, but there was a problem loading the webpage. There " +
                     "might be multiple of the same city or this city might be in a country " +
                     "besides the United States. Please make sure to enter a valid city " +
                     "in the United States.";
                 dialogBox.setContentText(message);
-                dialogBox.showAndWait();
+                Platform.runLater(() -> dialogBox.showAndWait());
             } catch (ArrayIndexOutOfBoundsException aioobe) {
                 message = "I'm sorry, but this is not a valid input. Please try " +
                     "again, and make sure to enter a city in the United States.";
                 dialogBox.setContentText(message);
-                dialogBox.showAndWait();
+                Platform.runLater(() -> dialogBox.showAndWait());
             } catch (NullPointerException npe) {
-                message = "\n\nThe input was invalid. Please make sure to enter a valid city " +
+                message = "The input was invalid. Please make sure to enter a valid city " +
                     "in the United States.";
                 dialogBox.setContentText(message);
-                dialogBox.showAndWait();
+                Platform.runLater(() -> dialogBox.showAndWait());
             } // try
         }; // weather lambda
-        getDetailedForecasts.setOnAction(df);
+        getDetailedForecasts.setOnAction(event -> runInNewThread(df));
     } // init
 
     /**
@@ -290,16 +300,16 @@ public class ApiApp extends Application {
      */
     private void setDetailedForecasts() throws IOException, InterruptedException {
         getWeather();
-        cc1.setDetailedForecast(forecastResponse);
-        cc2.setDetailedForecast(forecastResponse);
-        cc3.setDetailedForecast(forecastResponse);
-        cc4.setDetailedForecast(forecastResponse);
-        cc5.setDetailedForecast(forecastResponse);
-        cc6.setDetailedForecast(forecastResponse);
-        cc7.setDetailedForecast(forecastResponse);
-        cc8.setDetailedForecast(forecastResponse);
-        cc9.setDetailedForecast(forecastResponse);
-        cc10.setDetailedForecast(forecastResponse);
+        Platform.runLater(() -> cc1.setDetailedForecast(forecastResponse));
+        Platform.runLater(() -> cc2.setDetailedForecast(forecastResponse));
+        Platform.runLater(() -> cc3.setDetailedForecast(forecastResponse));
+        Platform.runLater(() -> cc4.setDetailedForecast(forecastResponse));
+        Platform.runLater(() -> cc5.setDetailedForecast(forecastResponse));
+        Platform.runLater(() -> cc6.setDetailedForecast(forecastResponse));
+        Platform.runLater(() -> cc7.setDetailedForecast(forecastResponse));
+        Platform.runLater(() -> cc8.setDetailedForecast(forecastResponse));
+        Platform.runLater(() -> cc9.setDetailedForecast(forecastResponse));
+        Platform.runLater(() -> cc10.setDetailedForecast(forecastResponse));
     } // setDetailedForecasts
 
     /**
@@ -348,6 +358,17 @@ public class ApiApp extends Application {
             System.out.println("dF = " + forecastResponse.properties.periods[i].detailedForecast);
         } // for
     } // printForecastResponse
+
+    /**
+     * This will run said runnable in a new thread.
+     *
+     * @param target contains what the thread will do when started
+     */
+    private void runInNewThread(Runnable target) {
+        Thread t = new Thread(target);
+        t.setDaemon(true);
+        t.start();
+    } // runInNewThread
 
     /** {@inheritDoc} */
     @Override
