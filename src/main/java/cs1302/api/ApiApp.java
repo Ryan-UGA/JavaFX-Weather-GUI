@@ -31,7 +31,17 @@ import javafx.scene.control.ButtonType;
 import javafx.scene.control.ButtonBar.ButtonData;
 
 /**
- * REPLACE WITH NON-SHOUTING DESCRIPTION OF YOUR APP.
+ * The ApiApp includes two API's, OpenCage and the National Weather Service.
+ * OpenCage is the API that will convert a city entered by the user into latitude and
+ * longitude. Then, these coordinates are inputted into the National Weather Service's uri
+ * to get the weather forecast.
+ * <p>
+ * However, the National Weather Service's API requires two different responses before reaching
+ * the data giving the weather's weekly forecast. The first response, indicated by the variable
+ * openCageResponse, will get a variety of data, including links to the weekly and hourly weather
+ * forecast. I pulled the link giving the weekly weather forecast, indicated by the variable
+ * forecastLink. Then, this link is the uri for the final response, indicated by the variable
+ * forecastResponse.
  */
 public class ApiApp extends Application {
     /** HTTP client. */
@@ -131,7 +141,7 @@ public class ApiApp extends Application {
         root.getChildren().addAll(cc1, cc2, cc3, cc4, cc5, cc6, cc7, cc8, cc9, cc10);
         root.setSpacing(10);
         top.setHgrow(search, Priority.ALWAYS);
-        EventHandler<ActionEvent> df = ae -> {
+        Runnable df = () -> {
             ButtonType ok = new ButtonType("OK", ButtonData.OK_DONE);
             Dialog<String> dialogBox = new Dialog<>();
             dialogBox.getDialogPane().getButtonTypes().add(ok);
@@ -169,7 +179,7 @@ public class ApiApp extends Application {
                 dialogBox.showAndWait();
             } // try
         }; // weather lambda
-        getDetailedForecasts.setOnAction(df);
+        getDetailedForecasts.setOnAction(event -> runInNewThread(df));
     } // init
 
     /**
@@ -268,6 +278,17 @@ public class ApiApp extends Application {
     } // getWeather
 
     /**
+     * This will run said runnable in a new thread.
+     *
+     * @param target contains what the thread will do when started
+     */
+    private void runInNewThread(Runnable target) {
+        Thread t = new Thread(target);
+        t.setDaemon(true);
+        t.start();
+    } // runInNewThread
+
+    /**
      * This method will set detailed forecasts for every custom component.
      *
      * @throws IOException when the site doesn't pull up
@@ -275,16 +296,16 @@ public class ApiApp extends Application {
      */
     private void setDetailedForecasts() throws IOException, InterruptedException {
         getWeather();
-        cc1.setDetailedForecast(forecastResponse);
-        cc2.setDetailedForecast(forecastResponse);
-        cc3.setDetailedForecast(forecastResponse);
-        cc4.setDetailedForecast(forecastResponse);
-        cc5.setDetailedForecast(forecastResponse);
-        cc6.setDetailedForecast(forecastResponse);
-        cc7.setDetailedForecast(forecastResponse);
-        cc8.setDetailedForecast(forecastResponse);
-        cc9.setDetailedForecast(forecastResponse);
-        cc10.setDetailedForecast(forecastResponse);
+        Platform.runLater(() -> cc1.setDetailedForecast(forecastResponse));
+        Platform.runLater(() -> cc2.setDetailedForecast(forecastResponse));
+        Platform.runLater(() -> cc3.setDetailedForecast(forecastResponse));
+        Platform.runLater(() -> cc4.setDetailedForecast(forecastResponse));
+        Platform.runLater(() -> cc5.setDetailedForecast(forecastResponse));
+        Platform.runLater(() -> cc6.setDetailedForecast(forecastResponse));
+        Platform.runLater(() -> cc7.setDetailedForecast(forecastResponse));
+        Platform.runLater(() -> cc8.setDetailedForecast(forecastResponse));
+        Platform.runLater(() -> cc9.setDetailedForecast(forecastResponse));
+        Platform.runLater(() -> cc10.setDetailedForecast(forecastResponse));
     } // setDetailedForecasts
 
     /**
