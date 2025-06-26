@@ -53,13 +53,6 @@ The project is part of the CSCI 1302 Spring 2023 course at the University of Geo
 
 ---
 
-## Setup and Running
-
-1. **Clone the Repository**
-   ```bash
-   git clone git@github.com:your-username/your-repo-name.git
-   cd your-repo-name
-
 ## Learning Outcomes
 - Develop a complete Java application with object-oriented principles
 
